@@ -1,0 +1,42 @@
+{
+  "name": "js-advanced-diploma",
+  "version": "1.0.0",
+  "description": "Вы неплохо овладели не только продвинутыми возможностями JS, но и инфраструктурными инструментами. Вам поручили первый проект: разработать небольшую пошаговую игру.",
+  "homepage": "https://github.com/moregotz/js-advanced-diploma#readme",
+  "bugs": {
+    "url": "https://github.com/moregotz/js-advanced-diploma/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moregotz/js-advanced-diploma.git"
+  },
+  "license": "ISC",
+  "author": "moregotz",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "server": "webpack serve --mode development",
+    "compilation": "babel src -d dist -w",
+    "build": "webpack --mode production",
+    "lint": "eslint src",
+    "test": "jest",
+    "coverage": "jest --coverage"
+  },
+  "devDependencies": {
+    "@babel/cli": "^8.0.6",
+    "@babel/core": "^8.0.6",
+    "@babel/preset-env": "^8.0.6",
+    "babel-loader": "^10.1.1",
+    "css-loader": "^7.1.5",
+    "eslint": "^8.57.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.32.0",
+    "html-loader": "^5.1.0",
+    "html-webpack-plugin": "^5.6.8",
+    "jest": "^30.5.2",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.111.1",
+    "webpack-cli": "^7.2.3",
+    "webpack-dev-server": "^6.0.0"
+  }
+}
