@@ -12,5 +12,10 @@
  * ```
  * */
 export default class Team {
-  // TODO: write your logic here
+  constructor(characters) {
+    if (!Array.isArray(characters)) {
+      throw new Error('characters должен быть массивом');
+    }
+    this.characters = characters;
+  }
 }
