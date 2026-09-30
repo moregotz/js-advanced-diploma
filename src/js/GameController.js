@@ -63,18 +63,37 @@ export default class GameController {
       positions.push(new PositionedCharacter(character, i));
     }
 
+    this.positions = positions;
+
     game.redrawPositions(positions);
+    this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
+    this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
+    this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
   }
 
+
   onCellClick(index) {
-    // TODO: react to click
+
   }
 
   onCellEnter(index) {
-    // TODO: react to mouse enter
+    const characterPosition = this.positions;
+    const characterFind = characterPosition.find(item => item.position === index);
+    if (characterFind) {
+      function characterTag(strings, level, attack, defence, health) {
+        return `🎖${level} ⚔${attack} 🛡${defence} ❤${health}`;
+      }
+
+      const char = characterFind.character;
+      const result = characterTag`${char.level} ${char.attack} ${char.defence} ${char.health}`;
+      this.gamePlay.showCellTooltip(result, index);
+    }
   }
 
   onCellLeave(index) {
-    // TODO: react to mouse leave
+    const characterFind = this.positions.find(item => item.position === index);
+    if (characterFind) {
+      this.gamePlay.hideCellTooltip(index);
+    }
   }
 }
