@@ -21,6 +21,8 @@ export default class Character {
     this.attack = 0;
     this.defence = 0;
     this.health = 50;
+    this.moveRange = 0;
+    this.attackRange = 0;
     this.type = type;
   }
 }
