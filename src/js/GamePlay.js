@@ -1,4 +1,6 @@
+/* eslint-disable no-alert */
 import { calcHealthLevel, calcTileType } from './utils.js';
+import GameState from './GameState.js';
 
 export default class GamePlay {
   constructor() {
@@ -12,6 +14,7 @@ export default class GamePlay {
     this.newGameListeners = [];
     this.saveGameListeners = [];
     this.loadGameListeners = [];
+    this.gameState = new GameState();
   }
 
   bindToDOM(container) {
@@ -21,14 +24,8 @@ export default class GamePlay {
     this.container = container;
   }
 
-  /**
-   * Draws boardEl with specific theme
-   *
-   * @param theme
-   */
   drawUi(theme) {
     this.checkBinding();
-
     this.container.innerHTML = `
       <div class="controls">
         <button data-id="action-restart" class="btn">New Game</button>
@@ -39,18 +36,18 @@ export default class GamePlay {
         <div data-id="board" class="board"></div>
       </div>
     `;
-
     this.newGameEl = this.container.querySelector('[data-id=action-restart]');
     this.saveGameEl = this.container.querySelector('[data-id=action-save]');
     this.loadGameEl = this.container.querySelector('[data-id=action-load]');
+    this.boardEl = this.container.querySelector('[data-id=board]');
 
     this.newGameEl.addEventListener('click', (event) => this.onNewGameClick(event));
     this.saveGameEl.addEventListener('click', (event) => this.onSaveGameClick(event));
     this.loadGameEl.addEventListener('click', (event) => this.onLoadGameClick(event));
 
-    this.boardEl = this.container.querySelector('[data-id=board]');
+    const currentTheme = theme || this.gameState.theme || 'prairie';
+    this.boardEl.classList.add(currentTheme);
 
-    this.boardEl.classList.add(theme);
     for (let i = 0; i < this.boardSize ** 2; i += 1) {
       const cellEl = document.createElement('div');
       cellEl.classList.add('cell', 'map-tile', `map-tile-${calcTileType(i, this.boardSize)}`);
@@ -59,91 +56,80 @@ export default class GamePlay {
       cellEl.addEventListener('click', (event) => this.onCellClick(event));
       this.boardEl.appendChild(cellEl);
     }
-
     this.cells = Array.from(this.boardEl.children);
   }
 
-  /**
-   * Draws positions (with chars) on boardEl
-   *
-   * @param positions array of PositionedCharacter objects
-   */
   redrawPositions(positions) {
     for (const cell of this.cells) {
       cell.innerHTML = '';
     }
-
+    if (!positions) return;
     for (const position of positions) {
       const cellEl = this.boardEl.children[position.position];
       const charEl = document.createElement('div');
       charEl.classList.add('character', position.character.type);
-
       const healthEl = document.createElement('div');
       healthEl.classList.add('health-level');
-
       const healthIndicatorEl = document.createElement('div');
       healthIndicatorEl.classList.add('health-level-indicator', `health-level-indicator-${calcHealthLevel(position.character.health)}`);
       healthIndicatorEl.style.width = `${position.character.health}%`;
       healthEl.appendChild(healthIndicatorEl);
-
       charEl.appendChild(healthEl);
       cellEl.appendChild(charEl);
     }
   }
 
-  /**
-   * Add listener to mouse enter for cell
-   *
-   * @param callback
-   */
-  addCellEnterListener(callback) {
-    this.cellEnterListeners.push(callback);
+  blockBoard() {
+    if (this.boardEl) {
+      this.boardEl.classList.add('board-disabled');
+      this.boardEl.style.pointerEvents = 'none';
+      this.boardEl.style.opacity = '0.6';
+    }
   }
 
-  /**
-   * Add listener to mouse leave for cell
-   *
-   * @param callback
-   */
-  addCellLeaveListener(callback) {
-    this.cellLeaveListeners.push(callback);
+  unblockBoard() {
+    if (this.boardEl) {
+      this.boardEl.classList.remove('board-disabled');
+      this.boardEl.style.pointerEvents = 'auto';
+      this.boardEl.style.opacity = '1';
+    }
   }
 
-  /**
-   * Add listener to mouse click for cell
-   *
-   * @param callback
-   */
-  addCellClickListener(callback) {
-    this.cellClickListeners.push(callback);
+  checkRoundEnd(playerPositions, enemyPositions) {
+    const alivePlayers = playerPositions.filter((p) => p.character.health > 0);
+    const aliveEnemies = enemyPositions.filter((p) => p.character.health > 0);
+
+    if (aliveEnemies.length === 0) {
+      if (this.gameState.level >= 4) {
+        this.gameState.isGameComplete = true;
+        this.blockBoard();
+      } else {
+        alivePlayers.forEach((p) => p.character.levelUp());
+        this.gameState.level += 1;
+        const themesList = ['prairie', 'desert', 'arctic', 'mountain'];
+        this.gameState.theme = themesList[this.gameState.level - 1];
+        if (this.boardEl) {
+          this.boardEl.className = `board ${this.gameState.theme}`;
+        }
+      }
+    } else if (alivePlayers.length === 0) {
+      this.gameState.isGameOver = true;
+      this.blockBoard();
+    }
+    this.gameState.positions = [...alivePlayers, ...aliveEnemies];
   }
 
-  /**
-   * Add listener to "New Game" button click
-   *
-   * @param callback
-   */
-  addNewGameListener(callback) {
-    this.newGameListeners.push(callback);
-  }
+  addCellEnterListener(callback) { this.cellEnterListeners.push(callback); }
 
-  /**
-   * Add listener to "Save Game" button click
-   *
-   * @param callback
-   */
-  addSaveGameListener(callback) {
-    this.saveGameListeners.push(callback);
-  }
+  addCellLeaveListener(callback) { this.cellLeaveListeners.push(callback); }
 
-  /**
-   * Add listener to "Load Game" button click
-   *
-   * @param callback
-   */
-  addLoadGameListener(callback) {
-    this.loadGameListeners.push(callback);
-  }
+  addCellClickListener(callback) { this.cellClickListeners.push(callback); }
+
+  addNewGameListener(callback) { this.newGameListeners.push(callback); }
+
+  addSaveGameListener(callback) { this.saveGameListeners.push(callback); }
+
+  addLoadGameListener(callback) { this.loadGameListeners.push(callback); }
 
   onCellEnter(event) {
     event.preventDefault();
@@ -158,12 +144,20 @@ export default class GamePlay {
   }
 
   onCellClick(event) {
+    if (this.gameState.isGameOver || this.gameState.isGameComplete) return;
     const index = this.cells.indexOf(event.currentTarget);
     this.cellClickListeners.forEach((o) => o.call(null, index));
   }
 
   onNewGameClick(event) {
     event.preventDefault();
+    const savedMaxScore = this.gameState ? this.gameState.maxScore : 0;
+    this.gameState = new GameState();
+    this.gameState.maxScore = savedMaxScore;
+    this.unblockBoard();
+    if (this.boardEl) {
+      this.boardEl.className = `board ${this.gameState.theme}`;
+    }
     this.newGameListeners.forEach((o) => o.call(null));
   }
 
@@ -177,13 +171,9 @@ export default class GamePlay {
     this.loadGameListeners.forEach((o) => o.call(null));
   }
 
-  static showError(message) {
-    alert(message);
-  }
+  static showError(message) { alert(message); }
 
-  static showMessage(message) {
-    alert(message);
-  }
+  static showMessage(message) { alert(message); }
 
   selectCell(index, color = 'yellow') {
     this.deselectCell(index);
@@ -192,8 +182,7 @@ export default class GamePlay {
 
   deselectCell(index) {
     const cell = this.cells[index];
-    cell.classList.remove(...Array.from(cell.classList)
-      .filter((o) => o.startsWith('selected')));
+    cell.classList.remove(...Array.from(cell.classList).filter((o) => o.startsWith('selected')));
   }
 
   showCellTooltip(message, index) {
@@ -211,16 +200,17 @@ export default class GamePlay {
       damageEl.textContent = damage;
       damageEl.classList.add('damage');
       cell.appendChild(damageEl);
-
       damageEl.addEventListener('animationend', () => {
-        cell.removeChild(damageEl);
+        if (cell.contains(damageEl)) {
+          cell.removeChild(damageEl);
+        }
         resolve();
       });
     });
   }
 
   setCursor(cursor) {
-    this.boardEl.style.cursor = cursor;
+    if (this.boardEl) this.boardEl.style.cursor = cursor;
   }
 
   checkBinding() {

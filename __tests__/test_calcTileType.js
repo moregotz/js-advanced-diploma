@@ -1,4 +1,4 @@
-import { calcTileType } from '../src/js/utils.js';
+import { calcTileType, calcHealthLevel } from '../src/js/utils.js';
 
 test('cell_top', () => {
     expect(calcTileType(3, 5)).toBe('top');
@@ -34,4 +34,24 @@ test('cell_bottom-left', () => {
 
 test('cell_bottom-right', () => {
     expect(calcTileType(63, 8)).toBe('bottom-right');
+});
+
+
+describe('calcHealthLevel', () => {
+    test('crit_health', () => {
+        expect(calcHealthLevel(10)).toBe('critical');
+        expect(calcHealthLevel(0)).toBe('critical');
+    });
+
+    test('normal_health', () => {
+        expect(calcHealthLevel(15)).toBe('normal');
+        expect(calcHealthLevel(30)).toBe('normal');
+        expect(calcHealthLevel(49)).toBe('normal');
+    });
+
+    test('high_health', () => {
+        expect(calcHealthLevel(50)).toBe('high');
+        expect(calcHealthLevel(80)).toBe('high');
+        expect(calcHealthLevel(100)).toBe('high');
+    });
 });

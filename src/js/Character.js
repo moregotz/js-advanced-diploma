@@ -13,7 +13,7 @@
  * vampire
  */
 export default class Character {
-  constructor(level, type = 'generic') {
+  constructor(level = 1, type = 'generic') {
     if (new.target === Character) {
       throw new Error('Объект Character не создаётся напрямую');
     }
@@ -24,5 +24,26 @@ export default class Character {
     this.moveRange = 0;
     this.attackRange = 0;
     this.type = type;
+  }
+
+  levelUp() {
+    this.level += 1;
+    const currHealth = this.health;
+    this.health = Math.min(100, this.health + 80);
+    const multiplier = (80 + currHealth) / 100;
+    this.attack = Math.max(this.attack, Math.floor(this.attack * multiplier));
+    this.defence = Math.max(this.defence, Math.floor(this.defence * multiplier));
+  }
+
+  toJSON() {
+    return {
+      type: this.type,
+      level: this.level,
+      health: this.health,
+      attack: this.attack,
+      defence: this.defence,
+      moveRange: this.moveRange,
+      attackRange: this.attackRange,
+    };
   }
 }
